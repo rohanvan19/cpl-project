@@ -1,0 +1,92 @@
+options {
+  STATIC = false;
+  JAVA_UNICODE_ESCAPE = true;
+  OUTPUT_DIRECTORY = "parser";
+}
+
+PARSER_BEGIN(MiniLangParser)
+
+public class MiniLangParser {
+  public static void main(String[] args) throws ParseException {
+    MiniLangParser parser = new MiniLangParser(System.in);
+    parser.Program();
+    System.out.println("Parsing completed successfully!");
+  }
+}
+
+PARSER_END(MiniLangParser)
+
+SKIP : {
+  " " | "\t" | "\n" | "\r"
+}
+
+TOKEN : {
+  < LET: "let" > |
+  < IF: "if" > |
+  < ELSE: "else" > |
+  < WHILE: "while" > |
+  < PRINT: "print" > |
+  < EQ: "==" > |
+  < ASSIGN: "=" > |
+  < SEMI: ";" > |
+  < LPAREN: "(" > |
+  < RPAREN: ")" > |
+  < LBRACE: "{" > |
+  < RBRACE: "}" > |
+
+  // ✅ Safe, old-school JJTree-compatible string token
+  < STRING: "\"" (~["\"", "\n", "\r"])* "\"" > |
+  < ID: <LETTER> (<LETTER_OR_DIGIT>)* >
+
+}
+
+TOKEN : {
+    < #LETTER: ["a"-"z", "A"-"Z"] >
+  | < #LETTER_OR_DIGIT: ["a"-"z", "A"-"Z", "0"-"9"] >
+}
+
+// --------- Grammar Rules ---------
+
+void Program() : {}
+{
+  ( Statement() )* <EOF>
+}
+
+void Statement() : {}
+{
+    VarDecl()
+  | PrintStmt()
+  | IfStmt()
+  | WhileStmt()
+}
+
+void VarDecl() : {}
+{
+  <LET> <ID> <ASSIGN> Expression() <SEMI>
+}
+
+void PrintStmt() : {}
+{
+  <PRINT> Expression() <SEMI>
+}
+
+void IfStmt() : {}
+{
+  <IF> <LPAREN> Condition() <RPAREN> <LBRACE> ( Statement() )* <RBRACE>
+  [ <ELSE> <LBRACE> ( Statement() )* <RBRACE> ]
+}
+
+void WhileStmt() : {}
+{
+  <WHILE> <LPAREN> Condition() <RPAREN> <LBRACE> ( Statement() )* <RBRACE>
+}
+
+void Condition() : {}
+{
+  Expression() <EQ> Expression()
+}
+
+void Expression() : {}
+{
+  <STRING> | <ID>
+}
